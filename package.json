@@ -1,0 +1,16 @@
+{
+  "name": "kouralink-server-side",
+  "version": "0.1.0",
+  "description": "kouralink server side",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "ilorez",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.19.2",
+    "firebase": "^10.10.0",
+    "morgan": "^1.10.0"
+  }
+}
