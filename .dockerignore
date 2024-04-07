@@ -1,0 +1,18 @@
+# Ignore node_modules directory
+node_modules
+
+# Ignore any files or directories starting with a dot
+.*
+
+# Ignore log files
+*.log
+
+# Ignore build artifacts
+build
+
+# Ignore development files
+
+# Ignore editor-specific files
+.vscode
+.idea
+
