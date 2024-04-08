@@ -10,6 +10,8 @@ import {
   query,
   where,
   setDoc,
+  Timestamp,
+  limit,
 } from "firebase/firestore";
 
 const db = getFirestore(firebase);
@@ -34,6 +36,7 @@ export const createTeam = async (req, res) => {
   try {
     // test if teamName exists
     const data = req.body;
+    console.log(data);
     // make sure that all fields are filled and make egal empty string if not expet teamName and id and coatch
     if (!data.description) {
       data.description = "";
@@ -44,13 +47,10 @@ export const createTeam = async (req, res) => {
     if (!data.blackList) {
       data.blackList = [];
     }
-    const servertime = firebase.firestore.Timestamp.serverTimestamp();
-    if (!data.createdAt) {
-      data.createdAt = servertime;
-    }
-    if (!data.updatedAt) {
-      data.updatedAt = servertime;
-    }
+    const servertime = Timestamp.now();
+    console.log("server time:", servertime);
+    data.createdAt = servertime;
+    data.updatedAt = servertime;
 
     // team name
     const teamName = data.teamName;
@@ -64,7 +64,7 @@ export const createTeam = async (req, res) => {
       res.status(400).send(`team with name: ${teamName} already exists`);
       return;
     }
-    // coatch 
+    // coatch
     const coach = data.coach;
     if (!coach) {
       res.status(400).send("coach is required");
@@ -85,17 +85,17 @@ export const createTeam = async (req, res) => {
     }
 
     // create team
-    const team = new Team(
-      teamName,
-      data.description,
-      coach,
-      data.teamLogo,
-      data.blackList,
-      data.createdAt,
-      data.updatedAt,
-      coach
-    );
-    await setDoc(doc(db, "teams", id), team);
+
+    await setDoc(doc(db, "teams", id), {
+      teamName: teamName,
+      description: data.description,
+      coach: coach,
+      teamLogo: data.teamLogo,
+      blackList: data.blackList,
+      createdAt: data.createdAt,
+      updatedAt: data.updatedAt,
+      createdBy: coach,
+    });
     res.status(201).send(`team created with id: ${req.body.id}`);
   } catch (error) {
     res.status(500).send(error);
@@ -128,7 +128,7 @@ export const updateTeam = async (req, res) => {
         }
       }
       // update updateAt
-      data.updatedAt = firebase.firestore.Timestamp.serverTimestamp();
+      data.updatedAt = Timestamp.now();
       await setDoc(docRef, data, { merge: true });
       res.status(200).send(`team with id: ${id} updated`);
     } else {
@@ -144,8 +144,8 @@ export const deleteTeam = async (req, res) => {
   try {
     const docRef = doc(collection(db, "teams"), req.params.id);
     const docSnap = await getDoc(docRef);
-    // delete 
-    
+    // delete
+
     if (docSnap.exists()) {
       await deleteDoc(docRef);
       res.status(200).send(`team with id: ${req.params.id} deleted`);
@@ -156,7 +156,6 @@ export const deleteTeam = async (req, res) => {
     res.status(400).send(error.message);
   }
 };
-
 
 // get team by id
 export const getTeamById = async (req, res) => {
@@ -176,15 +175,17 @@ export const getTeamById = async (req, res) => {
 // add user to blackList
 export const addUserToBlackList = async (req, res) => {
   try {
-    const docRef = doc(collection(db, "teams"), req.params.id);
+    const tid = req.params.tid;
+    const uid = req.params.uid;
+    const docRef = doc(collection(db, "teams"), tid);
     const docSnap = await getDoc(docRef);
     if (docSnap.exists()) {
       const data = docSnap.data();
-      if (data.blackList.includes(req.body.userId)) {
+      if (data.blackList.includes(uid)) {
         res.status(400).send("user already in blackList");
         return;
       }
-      data.blackList.push(req.body.userId);
+      data.blackList.push(uid);
       // update updateAt
       data.updatedAt = firebase.firestore.Timestamp.serverTimestamp();
 
@@ -201,17 +202,17 @@ export const addUserToBlackList = async (req, res) => {
 // remove user from blackList
 export const removeUserFromBlackList = async (req, res) => {
   try {
-    const docRef = doc(collection(db, "teams"), req.params.id);
+    const tid = req.params.tid;
+    const uid = req.params.uid;
+    const docRef = doc(collection(db, "teams"), tid);
     const docSnap = await getDoc(docRef);
     if (docSnap.exists()) {
       const data = docSnap.data();
-      if (!data.blackList.includes(req.body.userId)) {
+      if (!data.blackList.includes(uid)) {
         res.status(400).send("user not in blackList");
         return;
       }
-      data.blackList = data.blackList.filter(
-        (userId) => userId !== req.body.userId
-      );
+      data.blackList = data.blackList.filter((userId) => userId !== uid);
       // update updateAt
       data.updatedAt = firebase.firestore.Timestamp.serverTimestamp();
       await setDoc(docRef, data, { merge: true });
@@ -226,12 +227,12 @@ export const removeUserFromBlackList = async (req, res) => {
 
 // search team by teamName
 // get all teams that have teamName like the query limit to 10
-export const searchTeam = async (req, res) => {
+export const searchTeams = async (req, res) => {
   try {
     const q = query(
       collection(db, "teams"),
-      where("teamName", ">=", req.params.query),
-      where("teamName", "<=", req.params.query + "\uf8ff"),
+      where("name", ">=", req.params.query),
+      where("name", "<=", req.params.query + "\uf8ff"),
       limit(10)
     );
     const querySnapshot = await getDocs(q);
@@ -244,9 +245,3 @@ export const searchTeam = async (req, res) => {
     res.status(400).send(error.message);
   }
 };
-
-
-
-
-
-
