@@ -1,14 +1,11 @@
-import { set } from 'firebase/database';
 import firebase from '../firebase.js';
 import User from '../Models/userModel.js';
 import {
   getFirestore,
   collection,
   doc,
-  addDoc,
   getDoc,
   getDocs,
-  updateDoc,
   deleteDoc,
   query,
   where,
@@ -101,7 +98,8 @@ export const isUsernameUnique = async (req, res) => {
 
 // using get method to get user by username
 export const getUserByUsername = async (req, res) => {
-    try {
+  try {
+        
         const q = query(collection(db, 'users'), where('username', '==', req.params.username));
         const querySnapshot = await getDocs(q);
         if (!querySnapshot.empty) {
