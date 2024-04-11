@@ -12,6 +12,7 @@ import {
   setDoc,
   Timestamp,
   limit,
+  addDoc,
 } from "firebase/firestore";
 
 const db = getFirestore(firebase);
@@ -22,6 +23,9 @@ const isItUniqueTeamName = async (teamName) => {
   const querySnapshot = await getDocs(q);
   return querySnapshot.empty;
 };
+
+//TODO: return team after update success in updateTeam function
+//TODO: return team after create success in createTeam function
 
 // create team team (teamName, coatch, id) is required other fields are optional and have default value if not filled that is empty string or empty array
 // blackList is array of user id
@@ -36,8 +40,7 @@ export const createTeam = async (req, res) => {
   try {
     // test if teamName exists
     const data = req.body;
-    console.log(data);
-    // make sure that all fields are filled and make egal empty string if not expet teamName and id and coatch
+    // make sure that all fields are filled and make egal empty string if not expet teamName and coatch
     if (!data.description) {
       data.description = "";
     }
@@ -51,18 +54,21 @@ export const createTeam = async (req, res) => {
     console.log("server time:", servertime);
     data.createdAt = servertime;
     data.updatedAt = servertime;
-
+    
+    console.log(data);
     // team name
     const teamName = data.teamName;
     if (!teamName) {
+      // return obj contain error message
       res.status(400).send("teamName is required");
+
       return;
     }
     // test if is it unique team name
     const isUnique = await isItUniqueTeamName(teamName);
     if (!isUnique) {
-      res.status(400).send(`team with name: ${teamName} already exists`);
-      return;
+      console.log("team with name: ", teamName, " already exists");
+      return res.status(400).send(`team with name: ${teamName} already exists`);
     }
     // coatch
     const coach = data.coach;
@@ -70,23 +76,22 @@ export const createTeam = async (req, res) => {
       res.status(400).send("coach is required");
       return;
     }
-    // team id
-    const id = data.id;
-    if (!id) {
-      res.status(400).send("id is required");
-      return;
-    }
+    // const id = teamName + coach;
+    // if (!id) {
+    //   res.status(400).send("id is required");
+    //   return;
+    // }
     // test if aleady there is doc with id
-    const docRef = doc(collection(db, "teams"), req.body.id);
-    const docSnap = await getDoc(docRef);
-    if (docSnap.exists()) {
-      res.status(400).send(`team with id: ${req.body.id} already exists`);
-      return;
-    }
+    // const docRef = doc(collection(db, "teams"), id);
+    // const docSnap = await getDoc(docRef);
+    // if (docSnap.exists()) {
+    //   res.status(400).send(`team with id: ${id} already exists`);
+    //   return;
+    // }
 
     // create team
 
-    await setDoc(doc(db, "teams", id), {
+    await addDoc(collection(db, "teams"), {
       teamName: teamName,
       description: data.description,
       coach: coach,
@@ -96,9 +101,10 @@ export const createTeam = async (req, res) => {
       updatedAt: data.updatedAt,
       createdBy: coach,
     });
-    res.status(201).send(`team created with id: ${req.body.id}`);
+    res.status(201).send(`team created with name: ${teamName}`);
   } catch (error) {
-    res.status(500).send(error);
+    console.log(error);
+    res.status(500).send("internal server error check it ilorez");
   }
 };
 
@@ -245,3 +251,9 @@ export const searchTeams = async (req, res) => {
     res.status(400).send(error.message);
   }
 };
+
+// Q and A
+// Q: how to send error message in express?
+// A: use res.status(400).send("error message");
+// how to get this error message in the client side?
+// A: use fetch api and get the response and use response.text() or response.json() to get the message
