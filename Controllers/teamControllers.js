@@ -13,6 +13,7 @@ import {
   Timestamp,
   limit,
   addDoc,
+  orderBy,
 } from "firebase/firestore";
 
 const db = getFirestore(firebase);
@@ -169,7 +170,9 @@ export const getTeamById = async (req, res) => {
     const docRef = doc(collection(db, "teams"), req.params.id);
     const docSnap = await getDoc(docRef);
     if (docSnap.exists()) {
-      res.status(200).send(docSnap.data());
+      const data = docSnap.data();
+      data.id = docSnap.id;
+      res.status(200).send(data);
     } else {
       res.status(404).send("team not found");
     }
@@ -235,17 +238,25 @@ export const removeUserFromBlackList = async (req, res) => {
 // get all teams that have teamName like the query limit to 10
 export const searchTeams = async (req, res) => {
   try {
+    console.log('working')
+    console.log(req.params.teamName)
     const q = query(
       collection(db, "teams"),
-      where("name", ">=", req.params.query),
-      where("name", "<=", req.params.query + "\uf8ff"),
+      orderBy("teamName"),
+      where("teamName", ">=", req.params.teamName),
+      where("teamName", "<=", req.params.teamName + "\uf8ff"),
       limit(10)
     );
+
     const querySnapshot = await getDocs(q);
     const teams = [];
     querySnapshot.forEach((doc) => {
       teams.push(doc.data());
     });
+    if (teams.length === 0) {
+      res.status(404).send(`no teams with name like ${req.params.teamName} found`);
+      return;
+    }
     res.status(200).send(teams);
   } catch (error) {
     res.status(400).send(error.message);
