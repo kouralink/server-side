@@ -7,7 +7,7 @@ router.post('/', createTeam);
 router.put('/', updateTeam);
 router.delete('/:id', deleteTeam);
 router.get('/:id', getTeamById);
-router.get('/search/:query', searchTeams);
+router.get('/search/:teamName', searchTeams);
 router.get('/blackList/add/:tid/:uid', addUserToBlackList);
 router.get('/blackList/remove/:tid/:uid', removeUserFromBlackList);
 
